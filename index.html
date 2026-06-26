@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>未来から逆算しよう｜ワーク① ボード</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <style> body{ background:#fafaf9; } </style>
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">
-const { useState } = React;
-
+<noscript>このアプリを使うにはJavaScriptを有効にしてください。</noscript>
+<script>
+const {
+  useState
+} = React;
 const MODEL = "claude-sonnet-4-6";
-
 const SAMPLE = `【浜田亮】
 ①eラーニングで学んだ知識が現場の実践に直結し、研修が「受けて終わり」でなくなる
 ②新人の育ち方がOJTの当たり外れで大きく変わってしまう属人性
@@ -52,163 +52,247 @@ const SAMPLE = `【浜田亮】
 【外崎翔太】
 ①テクノロジーで、障害の有無に関わらず学べて働ける社会に近づく
 ②現場の声が制度や本部に届きにくく、改善のスピードが遅い`;
-
-function parsePaste(raw){
-  const people=[]; const re=/【(.+?)】([\s\S]*?)(?=【|$)/g; let m;
-  while((m=re.exec(raw))!==null){
-    const name=m[1].trim(); const body=m[2];
-    const a1m=body.match(/①\s*([\s\S]*?)(?=②|$)/);
-    const a2m=body.match(/②\s*([\s\S]*?)$/);
-    const a1=a1m?a1m[1].trim().replace(/\n+/g," "):"";
-    const a2=a2m?a2m[1].trim().replace(/\n+/g," "):"";
-    if(name&&(a1||a2)) people.push({name,a1,a2});
+function parsePaste(raw) {
+  const people = [];
+  const re = /【(.+?)】([\s\S]*?)(?=【|$)/g;
+  let m;
+  while ((m = re.exec(raw)) !== null) {
+    const name = m[1].trim();
+    const body = m[2];
+    const a1m = body.match(/①\s*([\s\S]*?)(?=②|$)/);
+    const a2m = body.match(/②\s*([\s\S]*?)$/);
+    const a1 = a1m ? a1m[1].trim().replace(/\n+/g, " ") : "";
+    const a2 = a2m ? a2m[1].trim().replace(/\n+/g, " ") : "";
+    if (name && (a1 || a2)) people.push({
+      name,
+      a1,
+      a2
+    });
   }
   return people;
 }
-
-async function callClaude(key, prompt){
-  const res=await fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-api-key":key,
-      "anthropic-version":"2023-06-01",
-      "anthropic-dangerous-direct-browser-access":"true"
+async function callClaude(key, prompt) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
     },
-    body:JSON.stringify({ model:MODEL, max_tokens:1500, messages:[{role:"user",content:prompt}] })
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 1500,
+      messages: [{
+        role: "user",
+        content: prompt
+      }]
+    })
   });
-  if(!res.ok){ throw new Error("API "+res.status); }
-  const data=await res.json();
-  return (data.content||[]).filter(i=>i.type==="text").map(i=>i.text).join("").replace(/```json|```/g,"").trim();
+  if (!res.ok) {
+    throw new Error("API " + res.status);
+  }
+  const data = await res.json();
+  return (data.content || []).filter(i => i.type === "text").map(i => i.text).join("").replace(/```json|```/g, "").trim();
 }
-
-function Note({name,text,tone,size="lg"}){
-  const bg=tone==="amber"?"bg-amber-200":"bg-orange-200";
-  const dim=size==="lg"?"w-[108px] h-[108px] text-[11px]":"w-[84px] h-[84px] text-[9px]";
-  return (<div className={bg+" "+dim+" rounded-md shadow-sm p-1.5 overflow-hidden leading-tight"}>
-    <div className="font-bold text-stone-700 mb-0.5 truncate">{name}</div>
-    <div className="text-stone-700">{text}</div>
-  </div>);
+function Note({
+  name,
+  text,
+  tone,
+  size = "lg"
+}) {
+  const bg = tone === "amber" ? "bg-amber-200" : "bg-orange-200";
+  const dim = size === "lg" ? "w-[108px] h-[108px] text-[11px]" : "w-[84px] h-[84px] text-[9px]";
+  return /*#__PURE__*/React.createElement("div", {
+    className: bg + " " + dim + " rounded-md shadow-sm p-1.5 overflow-hidden leading-tight"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-stone-700 mb-0.5 truncate"
+  }, name), /*#__PURE__*/React.createElement("div", {
+    className: "text-stone-700"
+  }, text));
 }
-
-function Circle({title,tone,notes}){
-  const border=tone==="amber"?"border-amber-300":"border-orange-300";
-  return (<div className="flex flex-col items-center">
-    <div className="text-[13px] font-semibold text-stone-600 mb-2 text-center min-h-[20px] px-1">{title}</div>
-    <div className={"rounded-full border-2 border-dashed "+border+" w-52 h-52 flex flex-wrap gap-1.5 items-center justify-center content-center p-3"}>
-      {notes.map((n,i)=><Note key={i} name={n.name} text={n.text} tone={tone} size="sm" />)}
-    </div>
-  </div>);
+function Circle({
+  title,
+  tone,
+  notes
+}) {
+  const border = tone === "amber" ? "border-amber-300" : "border-orange-300";
+  return /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col items-center"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[13px] font-semibold text-stone-600 mb-2 text-center min-h-[20px] px-1"
+  }, title), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-full border-2 border-dashed " + border + " w-52 h-52 flex flex-wrap gap-1.5 items-center justify-center content-center p-3"
+  }, notes.map((n, i) => /*#__PURE__*/React.createElement(Note, {
+    key: i,
+    name: n.name,
+    text: n.text,
+    tone: tone,
+    size: "sm"
+  }))));
 }
-
-function Side({tone,people,grouped,sideKey}){
-  const header=sideKey==="q1"?"みんなの回答 ①":"みんなの回答 ②";
-  const panelBg=tone==="amber"?"bg-amber-50 border-amber-200":"bg-orange-50 border-orange-200";
-  const headBg=tone==="amber"?"bg-amber-100 text-amber-900":"bg-orange-100 text-orange-900";
-  const key=sideKey==="q1"?"a1":"a2";
-  const assigned=new Set();
-  if(grouped) grouped[sideKey].forEach(g=>g.names.forEach(nm=>assigned.add(nm)));
-  const loose=people.filter(p=>!assigned.has(p.name));
-  return (<div className="flex-1 min-w-0">
-    <div className={"rounded-xl border "+panelBg+" overflow-hidden mb-4"}>
-      <div className={"px-3 py-2 text-sm font-semibold "+headBg}>{header}</div>
-      <div className="p-3 flex flex-wrap gap-2 min-h-[120px]">
-        {loose.length===0&&grouped
-          ? <span className="text-xs text-stone-400 self-center">（グループへ移動済み）</span>
-          : loose.map(p=><Note key={p.name} name={p.name} text={p[key]} tone={tone} />)}
-      </div>
-    </div>
-    <div className="flex flex-wrap gap-4 justify-center">
-      {[0,1,2].map(gi=>{
-        const g=grouped?grouped[sideKey][gi]:null;
-        const title=g?g.label:("グループ"+["①","②","③"][gi]);
-        const notes=g?g.names.map(nm=>{const p=people.find(x=>x.name===nm);return {name:nm,text:p?p[key]:""};}):[];
-        return <Circle key={gi} title={title} tone={tone} notes={notes} />;
-      })}
-    </div>
-  </div>);
+function Side({
+  tone,
+  people,
+  grouped,
+  sideKey
+}) {
+  const header = sideKey === "q1" ? "みんなの回答 ①" : "みんなの回答 ②";
+  const panelBg = tone === "amber" ? "bg-amber-50 border-amber-200" : "bg-orange-50 border-orange-200";
+  const headBg = tone === "amber" ? "bg-amber-100 text-amber-900" : "bg-orange-100 text-orange-900";
+  const key = sideKey === "q1" ? "a1" : "a2";
+  const assigned = new Set();
+  if (grouped) grouped[sideKey].forEach(g => g.names.forEach(nm => assigned.add(nm)));
+  const loose = people.filter(p => !assigned.has(p.name));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 min-w-0"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rounded-xl border " + panelBg + " overflow-hidden mb-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-3 py-2 text-sm font-semibold " + headBg
+  }, header), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 flex flex-wrap gap-2 min-h-[120px]"
+  }, loose.length === 0 && grouped ? /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-stone-400 self-center"
+  }, "（グループへ移動済み）") : loose.map(p => /*#__PURE__*/React.createElement(Note, {
+    key: p.name,
+    name: p.name,
+    text: p[key],
+    tone: tone
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-4 justify-center"
+  }, [0, 1, 2].map(gi => {
+    const g = grouped ? grouped[sideKey][gi] : null;
+    const title = g ? g.label : "グループ" + ["①", "②", "③"][gi];
+    const notes = g ? g.names.map(nm => {
+      const p = people.find(x => x.name === nm);
+      return {
+        name: nm,
+        text: p ? p[key] : ""
+      };
+    }) : [];
+    return /*#__PURE__*/React.createElement(Circle, {
+      key: gi,
+      title: title,
+      tone: tone,
+      notes: notes
+    });
+  })));
 }
-
-function App(){
-  const [apiKey,setApiKey]=useState("");
-  const [people,setPeople]=useState([]);
-  const [grouped,setGrouped]=useState(null);
-  const [raw,setRaw]=useState("");
-  const [busy,setBusy]=useState(false);
-  const [error,setError]=useState("");
-
-  const loadPaste=()=>{
-    const p=parsePaste(raw);
-    if(p.length===0){ setError("【名前】①…②… の形式で貼り付けてください。"); return; }
-    setError(""); setPeople(p); setGrouped(null);
+function App() {
+  const [apiKey, setApiKey] = useState("");
+  const [people, setPeople] = useState([]);
+  const [grouped, setGrouped] = useState(null);
+  const [raw, setRaw] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const loadPaste = () => {
+    const p = parsePaste(raw);
+    if (p.length === 0) {
+      setError("【名前】①…②… の形式で貼り付けてください。");
+      return;
+    }
+    setError("");
+    setPeople(p);
+    setGrouped(null);
   };
-
-  const runGroup=async()=>{
-    if(people.length===0) return;
-    if(!apiKey){ setError("上の欄に Anthropic APIキー を入力してください。"); return; }
-    setBusy(true); setError("");
-    try{
-      const prompt=`以下は参加者の回答です。a1=「2030年の社会の変化」、a2=「現場で変わってほしい点」。
+  const runGroup = async () => {
+    if (people.length === 0) return;
+    if (!apiKey) {
+      setError("上の欄に Anthropic APIキー を入力してください。");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const prompt = `以下は参加者の回答です。a1=「2030年の社会の変化」、a2=「現場で変わってほしい点」。
 タスク: a1を意味の近さで【ちょうど3グループ】に分類しlabel(10字以内)を付ける。a2も同様に3グループ。さらにa1(未来)とa2(現場)のギャップを2〜3文で要約。
 出力は厳密なJSONのみ。前置き・マークダウン禁止。各nameは入力のnameと完全一致させる。
 形式:{"q1":[{"label":"","names":[""]},{"label":"","names":[]},{"label":"","names":[]}],"q2":[{"label":"","names":[]},{"label":"","names":[]},{"label":"","names":[]}],"gap":""}
 データ:${JSON.stringify(people)}`;
-      const text=await callClaude(apiKey,prompt);
+      const text = await callClaude(apiKey, prompt);
       setGrouped(JSON.parse(text));
-    }catch(e){
-      setError("グルーピングに失敗しました（"+e.message+"）。APIキーと回答内容を確認して、もう一度実行してください。");
-    }finally{ setBusy(false); }
+    } catch (e) {
+      setError("グルーピングに失敗しました（" + e.message + "）。APIキーと回答内容を確認して、もう一度実行してください。");
+    } finally {
+      setBusy(false);
+    }
   };
-
-  const reset=()=>{ setPeople([]); setGrouped(null); setRaw(""); setError(""); };
-
-  return (<div className="min-h-screen p-4 sm:p-6 text-stone-800">
-    <div className="max-w-6xl mx-auto">
-      <header className="mb-4">
-        <h1 className="text-xl font-bold">未来から逆算しよう｜ワーク① ボード</h1>
-        <p className="text-sm text-stone-500 mt-1">回答を貼り付け → グルーピング → ギャップ要約まで。</p>
-      </header>
-
-      <div className="rounded-2xl border border-stone-200 bg-white p-3 shadow-sm mb-4">
-        <label className="text-xs font-medium text-stone-500">Anthropic APIキー（この画面で入力。リポジトリには保存しないでください）</label>
-        <input type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)}
-          placeholder="sk-ant-..." className="w-full mt-1 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-emerald-400" />
-      </div>
-
-      <div className="rounded-2xl border border-stone-200 bg-white p-3 shadow-sm mb-6">
-        <textarea value={raw} onChange={e=>setRaw(e.target.value)}
-          placeholder={"【名前】\n①…\n②…\n\n…を全員分（最大9名）"}
-          className="w-full h-32 rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm outline-none focus:border-emerald-400 resize-none" />
-        <div className="flex flex-wrap items-center gap-2 mt-2">
-          <button onClick={loadPaste} className="rounded-lg bg-stone-800 text-white px-3 py-1.5 text-sm hover:bg-stone-700">読み込む</button>
-          <button onClick={()=>setRaw(SAMPLE)} className="text-xs text-stone-400 hover:text-stone-600">サンプルを入れる（9名）</button>
-          <button onClick={runGroup} disabled={busy||people.length===0}
-            className="ml-1 rounded-lg bg-emerald-700 text-white px-4 py-1.5 text-sm font-medium disabled:opacity-40 hover:bg-emerald-800">
-            {busy?"分類中…":"グルーピング実行"}</button>
-          {(people.length>0||grouped)&&<button onClick={reset} className="text-sm text-stone-400 hover:text-stone-600">リセット</button>}
-        </div>
-        {error&&<p className="mt-2 text-sm text-rose-600">{error}</p>}
-      </div>
-
-      {people.length===0
-        ? <div className="text-center text-stone-400 text-sm py-16 border border-dashed border-stone-200 rounded-2xl">回答を貼り付けて「読み込む」を押してください。</div>
-        : (<React.Fragment>
-            <div className="flex flex-col lg:flex-row gap-6">
-              <Side tone="amber" sideKey="q1" people={people} grouped={grouped} />
-              <Side tone="orange" sideKey="q2" people={people} grouped={grouped} />
-            </div>
-            <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 overflow-hidden">
-              <div className="px-4 py-2.5 bg-emerald-100 text-sm font-semibold text-emerald-900">2030年の未来と今のギャップ</div>
-              <p className="px-4 py-3 text-sm leading-relaxed text-emerald-900 min-h-[64px]">
-                {grouped?grouped.gap:<span className="text-emerald-700/50">グルーピングを実行すると、ここに要約が入ります。</span>}
-              </p>
-            </div>
-          </React.Fragment>)}
-    </div>
-  </div>);
+  const reset = () => {
+    setPeople([]);
+    setGrouped(null);
+    setRaw("");
+    setError("");
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "min-h-screen p-4 sm:p-6 text-stone-800"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "max-w-6xl mx-auto"
+  }, /*#__PURE__*/React.createElement("header", {
+    className: "mb-4"
+  }, /*#__PURE__*/React.createElement("h1", {
+    className: "text-xl font-bold"
+  }, "未来から逆算しよう｜ワーク① ボード"), /*#__PURE__*/React.createElement("p", {
+    className: "text-sm text-stone-500 mt-1"
+  }, "回答を貼り付け → グルーピング → ギャップ要約まで。")), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl border border-stone-200 bg-white p-3 shadow-sm mb-4"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-xs font-medium text-stone-500"
+  }, "Anthropic APIキー（この画面で入力。リポジトリには保存しないでください）"), /*#__PURE__*/React.createElement("input", {
+    type: "password",
+    value: apiKey,
+    onChange: e => setApiKey(e.target.value),
+    placeholder: "sk-ant-...",
+    className: "w-full mt-1 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-emerald-400"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-2xl border border-stone-200 bg-white p-3 shadow-sm mb-6"
+  }, /*#__PURE__*/React.createElement("textarea", {
+    value: raw,
+    onChange: e => setRaw(e.target.value),
+    placeholder: "【名前】\n①…\n②…\n\n…を全員分（最大9名）",
+    className: "w-full h-32 rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm outline-none focus:border-emerald-400 resize-none"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap items-center gap-2 mt-2"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: loadPaste,
+    className: "rounded-lg bg-stone-800 text-white px-3 py-1.5 text-sm hover:bg-stone-700"
+  }, "読み込む"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setRaw(SAMPLE),
+    className: "text-xs text-stone-400 hover:text-stone-600"
+  }, "サンプルを入れる（9名）"), /*#__PURE__*/React.createElement("button", {
+    onClick: runGroup,
+    disabled: busy || people.length === 0,
+    className: "ml-1 rounded-lg bg-emerald-700 text-white px-4 py-1.5 text-sm font-medium disabled:opacity-40 hover:bg-emerald-800"
+  }, busy ? "分類中…" : "グルーピング実行"), (people.length > 0 || grouped) && /*#__PURE__*/React.createElement("button", {
+    onClick: reset,
+    className: "text-sm text-stone-400 hover:text-stone-600"
+  }, "リセット")), error && /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-sm text-rose-600"
+  }, error)), people.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "text-center text-stone-400 text-sm py-16 border border-dashed border-stone-200 rounded-2xl"
+  }, "回答を貼り付けて「読み込む」を押してください。") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col lg:flex-row gap-6"
+  }, /*#__PURE__*/React.createElement(Side, {
+    tone: "amber",
+    sideKey: "q1",
+    people: people,
+    grouped: grouped
+  }), /*#__PURE__*/React.createElement(Side, {
+    tone: "orange",
+    sideKey: "q2",
+    people: people,
+    grouped: grouped
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-4 py-2.5 bg-emerald-100 text-sm font-semibold text-emerald-900"
+  }, "2030年の未来と今のギャップ"), /*#__PURE__*/React.createElement("p", {
+    className: "px-4 py-3 text-sm leading-relaxed text-emerald-900 min-h-[64px]"
+  }, grouped ? grouped.gap : /*#__PURE__*/React.createElement("span", {
+    className: "text-emerald-700/50"
+  }, "グルーピングを実行すると、ここに要約が入ります。"))))));
 }
-
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
 </script>
 </body>
 </html>

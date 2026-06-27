@@ -198,6 +198,7 @@ function App() {
   const [raw, setRaw] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [showKey, setShowKey] = useState(false);
   const loadPaste = () => {
     const p = parsePaste(raw);
     if (p.length === 0) {
@@ -210,14 +211,10 @@ function App() {
   };
   const runGroup = async () => {
     if (people.length === 0) return;
-    let key = apiKey;
-    if (!key) {
-      key = (window.prompt("Anthropic APIキーを入力してください（この端末にのみ保存され、次回から自動で使われます）") || "").trim();
-      if (!key) {
-        setError("APIキーが未設定のため実行できません。");
-        return;
-      }
-      updateKey(key);
+    if (!apiKey) {
+      setShowKey(true);
+      setError("先に「APIキー設定」からキーを登録してください（最初に1回だけ）。");
+      return;
     }
     setBusy(true);
     setError("");
@@ -227,7 +224,7 @@ function App() {
 出力は厳密なJSONのみ。前置き・マークダウン禁止。各nameは入力のnameと完全一致させる。
 形式:{"q1":[{"label":"","names":[""]},{"label":"","names":[]},{"label":"","names":[]}],"q2":[{"label":"","names":[]},{"label":"","names":[]},{"label":"","names":[]}],"gap":""}
 データ:${JSON.stringify(people)}`;
-      const text = await callClaude(key, prompt);
+      const text = await callClaude(apiKey, prompt);
       setGrouped(JSON.parse(text));
     } catch (e) {
       setError("グルーピングに失敗しました（" + e.message + "）。APIキーと回答内容を確認して、もう一度実行してください。");
@@ -251,7 +248,32 @@ function App() {
     className: "text-xl font-bold"
   }, "未来から逆算しよう｜ワーク① ボード"), /*#__PURE__*/React.createElement("p", {
     className: "text-sm text-stone-500 mt-1"
-  }, "回答を貼り付け → グルーピング → ギャップ要約まで。")), /*#__PURE__*/React.createElement("div", {
+  }, "回答を貼り付け → グルーピング → ギャップ要約まで。"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowKey(s => !s),
+    className: "mt-1 text-xs text-stone-400 hover:text-stone-600 underline"
+  }, apiKey ? "⚙ APIキー設定（設定済み）" : "⚙ APIキー設定（未設定）"), showKey && /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 rounded-xl border border-stone-200 bg-white p-3 shadow-sm"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-xs font-medium text-stone-500"
+  }, "Anthropic APIキー（この端末のブラウザにのみ保存。ワーク前に1回だけ設定してください）"), /*#__PURE__*/React.createElement("input", {
+    type: "password",
+    value: apiKey,
+    onChange: e => updateKey(e.target.value),
+    placeholder: "sk-ant-...",
+    className: "w-full mt-1 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-emerald-400"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "mt-1.5 flex items-center gap-3 text-xs"
+  }, apiKey ? /*#__PURE__*/React.createElement("span", {
+    className: "text-emerald-600"
+  }, "✓ 保存済み（本番はキー入力なしで実行できます）") : /*#__PURE__*/React.createElement("span", {
+    className: "text-stone-400"
+  }, "未設定です"), apiKey && /*#__PURE__*/React.createElement("button", {
+    onClick: () => updateKey(""),
+    className: "text-stone-400 hover:text-rose-600 underline"
+  }, "キーを削除"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowKey(false),
+    className: "text-stone-400 hover:text-stone-600 underline ml-auto"
+  }, "閉じる")))), /*#__PURE__*/React.createElement("div", {
     className: "rounded-2xl border border-stone-200 bg-white p-3 shadow-sm mb-6"
   }, /*#__PURE__*/React.createElement("textarea", {
     value: raw,
